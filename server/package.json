@@ -1,0 +1,28 @@
+{
+  "name": "bivo_server",
+  "version": "1.0.0",
+  "description": "Server listening on blockchain data orders and brodcasting to our users",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "bivo"
+  },
+  "keywords": [
+    "blockchain",
+    "node",
+    "express",
+    "socket"
+  ],
+  "author": "bivo_team",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "http": "0.0.1-security",
+    "socket.io": "^2.3.0",
+    "socket.io-client": "^2.3.0"
+  }
+}
