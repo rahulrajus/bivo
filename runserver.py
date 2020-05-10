@@ -7,21 +7,26 @@ from flask import Flask, request, jsonify, redirect, render_template
 from BiVOsendRequest import app
 from pymongo import MongoClient
 import json
-from flask_socketio import SOCKETIO, send, emit
+from flask_socketio import SocketIO, send, emit
 
 client = MongoClient("mongodb+srv://Borvo:dummocoin@bivo-query-qbt1m.mongodb.net/test?retryWrites=true&w=majority")
 db = client.test
 
 app = Flask(__name__)
-sio = SOCKETIO(app)
+sio = SocketIO(app)
 
-@sio.on('openDataChannel')
-def sendJSON(data):
-    emit(data)
+@sio.on('json', namespace='/json')
+def sendJSON(json):
+    print('received data: ' + str(json))
+    send(json, namespace='/json', json=True)
 
 @sio.on('disconnect')
 def disconnect():
-    print('CLient Disconnected')
+    print('Client Disconnected')
+
+@sio.on('connect')
+def connection():
+    print('Client Connected')
 
 @app.route('/about')
 def about():
@@ -62,6 +67,7 @@ def createDataOrder():
 def transfer():
     """Transfers data to the researcher's server"""
     dataIn = request.get_json()
+    my_dict = {}
     my_dict['encrypted_data'] = dataIn.get('data')      #data will be a vector of data points
     my_dict['orderID'] = dataIn.get('orderID')
     dataOut = jsonify(my_dict)
@@ -76,5 +82,5 @@ def transfer():
 
 if __name__ == '__main__':
     app.run(host = "0.0.0.0", port = int('3000'), debug = True)
-    sio.run(app)
+    sio.run(app, host = "0.0.0.0", port = int('4000'))
     
