@@ -7,6 +7,7 @@ from flask import Flask, request, jsonify, redirect, render_template
 from BiVOsendRequest import app
 from pymongo import MongoClient
 import json
+import requests
 from flask_socketio import SocketIO, send, emit
 
 client = MongoClient("mongodb+srv://Borvo:dummocoin@bivo-query-qbt1m.mongodb.net/test?retryWrites=true&w=majority")
@@ -15,10 +16,10 @@ db = client.test
 app = Flask(__name__)
 sio = SocketIO(app)
 
-@sio.on('json', namespace='/json')
+
 def sendJSON(json):
     print('received data: ' + str(json))
-    send(json, namespace='/json', json=True)
+    send(json, namespace = '/sending')
 
 @sio.on('disconnect')
 def disconnect():
@@ -46,35 +47,43 @@ def createDataOrder():
     dd = db.dataOrders.insert_one({
            "audience": dataIn.get('audience'),
            "query": dataIn.get('query'),
+           "university": dataIn.get('university'),
+           "research_type": dataIn.get('research_type'),
+           "price": dataIn.get('price'),
            "bio": dataIn.get('bio'),
-           "serverAddress": 'http://127.0.0.1:3000/transferData'
+           "serverAddress": 'http://f7e896cf.ngrok.io/transferData'
           })
 
     orderID = dd.inserted_id
 
     my_dict = {}
     my_dict['audience'] = dataIn.get('audience')        #audience will be an array of audience attributes
-    my_dict['query'] = dataIn.get('query')              #query will be an array of query attributes
-    my_dict['bio'] = dataIn.get('bio')                  #bio will be a string describing study
-    my_dict['serverAddress'] = 'http://127.0.0.1:3000/transferData'     #localhost is 127.0.0.1
-    my_dict['orderID'] = orderID
-    order = jsonify(my_dict)
-
-    response = requests.post("http://127.0.0.1:80/dataOrder", req = order)
+    my_dict['query'] = dataIn.get('query').get('data')              #query will be an array of query attributes
+    my_dict['university'] = dataIn.get('university')
+    my_dict['research_type'] = dataIn.get('research_type')
+    my_dict['price'] = dataIn.get('price')
+    my_dict['bio'] = dataIn.get('bio')                 #bio will be a string describing study
+    my_dict['serverAddress'] = 'http://f7e896cf.ngrok.io/transferData'     #localhost is 127.0.0.1
+    my_dict['orderId'] = str(orderID)
+    #order = jsonify(my_dict)
+    print(my_dict)
+    headers = {"Content-Type": "application/json"}
+    response = requests.post("http://ee1cab2e.ngrok.io/dataOrder", json = my_dict, headers = headers)
     return "Data Sent"
 
 @app.route('/transferData', methods = ['POST'])
-def transfer():
+def transferData():
     """Transfers data to the researcher's server"""
     dataIn = request.get_json()
+    print(dataIn)
     my_dict = {}
-    my_dict['encrypted_data'] = dataIn.get('data')      #data will be a vector of data points
-    my_dict['orderID'] = dataIn.get('orderID')
+    my_dict['encrypted_data'] = dataIn.get('data')      #data will be an array of headers pointing to arrays of data points
+    my_dict['orderId'] = dataIn.get('orderId')
     dataOut = jsonify(my_dict)
 
     datum = db.dataValues.insert_one({
            "data": dataIn.get('data'),
-           "orderID": dataIn.get('orderID'),
+           "orderId": dataIn.get('orderId'),
           })
 
     sendJSON(dataOut)
